@@ -1,6 +1,6 @@
 __pycache__/
 *.pyc
 .venv/
-reports/
+/reports/
 TradingAgents-CN/
 .DS_Store
