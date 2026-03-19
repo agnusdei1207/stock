@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from html import escape
 from pathlib import Path
 
@@ -599,7 +600,7 @@ def write_site_assets(output_dir: str) -> None:
     (js_path / "site.js").write_text(SITE_JS, encoding="utf-8")
 
 
-def write_site_index(output_dir: str, reports: list[dict[str, str]]) -> str:
+def _report_cards(reports: list[dict[str, str]]) -> str:
     cards = []
     for report in sorted(reports, key=lambda item: item["label"], reverse=True):
         search_blob = " ".join(
@@ -623,41 +624,45 @@ def write_site_index(output_dir: str, reports: list[dict[str, str]]) -> str:
             </a>
             """
         )
-    cards_html = "".join(cards) if cards else "<p class='empty'>No reports yet.</p>"
+    return "".join(cards) if cards else "<p class='empty'>No reports yet.</p>"
+
+
+def write_site_index(output_dir: str, reports: list[dict[str, str]]) -> str:
+    cards_html = _report_cards(reports)
     reports_json = json.dumps(reports, ensure_ascii=False)
 
     body = f"""
     <section class="hero">
       <div class="hero-card">
-        <h1 class="hero-title">Stock research reports with brainscience-style navigation</h1>
-        <p class="hero-copy">A blue-toned static research hub for daily master reports, source-validated ideas, and searchable market insight archives.</p>
+        <h1 class="hero-title">Daily stock research archive</h1>
+        <p class="hero-copy">Search first, then open cards. The home page is the archive: daily master reports, validated sources, risk views, and execution plans in one place.</p>
         <div class="hero-pills">
-          <span class="pill">Static hosting</span>
-          <span class="pill">Searchable</span>
-          <span class="pill">Daily reports</span>
+          <span class="pill">Blue theme</span>
+          <span class="pill">Instant search</span>
+          <span class="pill">Daily cards</span>
         </div>
       </div>
     </section>
 
     <section class="section-card">
-      <h2 class="section-title">Products</h2>
-      <div class="product-grid">
-        <a href="/stock/" class="product-card">
-          <div class="product-title">stock</div>
-          <p class="product-desc">Daily master-report orchestration for investing research</p>
-        </a>
-        <a href="/stock/reports/" class="product-card">
-          <div class="product-title">reports</div>
-          <p class="product-desc">Detailed daily market reports with sources, risks, and action plans</p>
-        </a>
+      <h2 class="section-title">Report Cards</h2>
+      <p class="muted">Press <code>/</code> to focus search. Results filter instantly on the page.</p>
+      <div class="report-grid">
+        {cards_html}
       </div>
     </section>
 
     <section class="section-card">
-      <h2 class="section-title">Recent Reports</h2>
-      <p class="muted">Press <code>/</code> to focus search. Results filter instantly on the page.</p>
-      <div class="report-grid">
-        {cards_html}
+      <h2 class="section-title">Quick Links</h2>
+      <div class="product-grid">
+        <a href="/stock/reports/" class="product-card">
+          <div class="product-title">Reports Archive</div>
+          <p class="product-desc">Full list view for all generated daily reports</p>
+        </a>
+        <a href="https://github.com/agnusdei1207/stock/blob/main/STOCK.md" class="product-card">
+          <div class="product-title">STOCK.md</div>
+          <p class="product-desc">Methodology and report standard for the research engine</p>
+        </a>
       </div>
     </section>
 
@@ -669,36 +674,13 @@ def write_site_index(output_dir: str, reports: list[dict[str, str]]) -> str:
 
 
 def write_reports_index(output_dir: str, reports: list[dict[str, str]]) -> str:
-    cards = []
-    for report in sorted(reports, key=lambda item: item["label"], reverse=True):
-        search_blob = " ".join(
-            [
-                report.get("label", ""),
-                report.get("title", ""),
-                report.get("ticker", ""),
-                report.get("theme", ""),
-                report.get("summary", ""),
-            ]
-        )
-        cards.append(
-            f"""
-            <a class="report-card" data-report-card data-search="{escape(search_blob)}" href="{escape(report['link'])}">
-              <div class="report-meta">
-                <span>{escape(report.get("label", ""))}</span>
-                <span>{escape(report.get("ticker", ""))}</span>
-              </div>
-              <div class="report-title">{escape(report.get("title", report.get("label", "")))}</div>
-              <p class="report-desc">{escape(report.get("summary", ""))}</p>
-            </a>
-            """
-        )
-    cards_html = "".join(cards) if cards else "<p class='empty'>No reports yet.</p>"
+    cards_html = _report_cards(reports)
     reports_json = json.dumps(reports, ensure_ascii=False)
     body = f"""
     <section class="hero">
       <div class="hero-card">
         <h1 class="hero-title">Reports archive</h1>
-        <p class="hero-copy">Searchable archive of daily stock master reports.</p>
+        <p class="hero-copy">Searchable card archive of daily stock master reports.</p>
       </div>
     </section>
     <section class="section-card">
@@ -711,3 +693,27 @@ def write_reports_index(output_dir: str, reports: list[dict[str, str]]) -> str:
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(_layout("stock reports", body), encoding="utf-8")
     return str(target)
+
+
+def publish_site_root(public_dir: str, repo_root: str) -> None:
+    public_path = Path(public_dir)
+    root_path = Path(repo_root)
+
+    root_path.joinpath(".nojekyll").write_text("", encoding="utf-8")
+
+    for relative in (
+        "index.html",
+        "assets/css/style.css",
+        "assets/js/site.js",
+        "reports/index.html",
+    ):
+        source = public_path / relative
+        target = root_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+
+    reports_public = public_path / "reports"
+    reports_root = root_path / "reports"
+    reports_root.mkdir(parents=True, exist_ok=True)
+    for html_file in reports_public.glob("*.html"):
+        shutil.copy2(html_file, reports_root / html_file.name)

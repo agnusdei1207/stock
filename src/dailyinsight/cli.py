@@ -7,6 +7,7 @@ import sys
 
 from .config import AppConfig
 from .html import (
+    publish_site_root,
     render_html,
     write_html_report,
     write_reports_index,
@@ -48,6 +49,8 @@ def main(argv: list[str] | None = None) -> int:
     report_links = []
     for path in html_files:
         label = os.path.basename(path).replace(".html", "")
+        if label == "index":
+            continue
         report_links.append(
             {
                 "label": label,
@@ -60,6 +63,7 @@ def main(argv: list[str] | None = None) -> int:
         )
     index_target = write_site_index(args.public_dir, report_links)
     write_reports_index(args.public_dir, report_links)
+    publish_site_root(args.public_dir, ".")
 
     print(markdown_target)
     print(html_target)
