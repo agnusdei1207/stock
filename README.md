@@ -47,7 +47,8 @@ This generates a markdown report under `reports/`.
 
 ## Live LLM Mode
 
-The live mode reads the existing Anthropic-compatible GLM settings from your shell environment.
+The live mode follows the same Anthropic-compatible GLM direction used in `../Pentesting`.
+Default target model is `glm-5`.
 It does not require separate `STOCK_AGENT_*` API variables.
 
 ```bash
@@ -61,13 +62,22 @@ Environment variables:
 
 | Variable | Required | Description |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | live only | API key |
-| `ANTHROPIC_BASE_URL` | no | Anthropic-compatible base URL |
-| `ANTHROPIC_DEFAULT_HAIKU_MODEL` | no | Default fast GLM model |
-| `ANTHROPIC_DEFAULT_SONNET_MODEL` | no | Fallback model |
-| `ANTHROPIC_DEFAULT_OPUS_MODEL` | no | Fallback model |
+| `ANTHROPIC_API_KEY` | preferred | API key |
+| `PENTEST_API_KEY` | fallback | Reuse pentesting key if present |
+| `ANTHROPIC_BASE_URL` | preferred | Anthropic-compatible base URL |
+| `PENTEST_BASE_URL` | fallback | Reuse pentesting base URL if present |
+| `ANTHROPIC_DEFAULT_OPUS_MODEL` | preferred | Defaults well to `glm-5` in your shell |
+| `PENTEST_MODEL` | fallback | Reuse pentesting model if present |
+| `ANTHROPIC_DEFAULT_SONNET_MODEL` | fallback | Secondary fallback |
+| `ANTHROPIC_DEFAULT_HAIKU_MODEL` | fallback | Secondary fallback |
 | `STOCK_AGENT_TIMEOUT` | no | Timeout seconds |
 | `STOCK_AGENT_MAX_TOKENS` | no | Max output tokens |
+
+Resolution order:
+
+1. API key: `ANTHROPIC_API_KEY` -> `PENTEST_API_KEY`
+2. Base URL: `ANTHROPIC_BASE_URL` -> `PENTEST_BASE_URL` -> `https://api.z.ai/api/anthropic`
+3. Model: `ANTHROPIC_DEFAULT_OPUS_MODEL` -> `PENTEST_MODEL` -> `ANTHROPIC_DEFAULT_SONNET_MODEL` -> `ANTHROPIC_DEFAULT_HAIKU_MODEL` -> `glm-5`
 
 ## Input Schema
 

@@ -1,0 +1,51 @@
+{
+  "date": "2026-03-19",
+  "world_market": {
+    "regime": "selective risk-on",
+    "rates": "higher-for-longer but stable",
+    "usd": "firm"
+  },
+  "headlines": [
+    {
+      "source": "Reuters",
+      "url": "https://www.reuters.com/",
+      "headline": "Hyperscalers continue data-center capex expansion with focus on power efficiency",
+      "why_it_matters": "supports infrastructure bottleneck thesis"
+    },
+    {
+      "source": "Techmeme",
+      "url": "https://www.techmeme.com/",
+      "headline": "Technical discussion keeps circling around power density and deployment constraints",
+      "why_it_matters": "good routing signal, not primary proof"
+    },
+    {
+      "source": "Bad Site",
+      "url": "https://example-clickbait.com/bad-story",
+      "headline": "This tiny AI stock will 100x by next month",
+      "why_it_matters": "should be filtered"
+    }
+  ],
+  "watchlist": [
+    "AI power and cooling",
+    "grid equipment",
+    "semicap second-order suppliers"
+  ],
+  "notes": [
+    "Filter weak sources out before report generation",
+    "Prefer attributable and technical sources"
+  ],
+  "candidate_universe": [
+    {
+      "name": "Vertiv",
+      "ticker": "VRT",
+      "market": "USA",
+      "theme": "AI power and cooling",
+      "current_price": "$96.40",
+      "ath": "$110.00",
+      "atl": "$8.00",
+      "52w_high": "$110.00",
+      "52w_low": "$58.20",
+      "signal": "real bottleneck"
+    }
+  ]
+}

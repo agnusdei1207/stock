@@ -1,0 +1,19 @@
+{
+  "preferred_domains": {
+    "reuters.com": "high-quality attributable reporting",
+    "bloomberg.com": "high-quality attributable reporting",
+    "ft.com": "high-quality attributable reporting",
+    "wsj.com": "high-quality attributable reporting",
+    "sec.gov": "official filing source",
+    "investor.nvidia.com": "official company IR source",
+    "news.ycombinator.com": "technical routing source with human signal"
+  },
+  "routing_domains": {
+    "techmeme.com": "good routing source, requires primary-source follow-through",
+    "geeknews.app": "technical routing source, requires primary-source follow-through"
+  },
+  "blocked_domains": {
+    "example-clickbait.com": "unattributable clickbait",
+    "rumorhub.local": "rumor-only source"
+  }
+}
