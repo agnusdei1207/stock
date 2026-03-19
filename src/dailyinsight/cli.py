@@ -6,7 +6,13 @@ import os
 import sys
 
 from .config import AppConfig
-from .html import render_html, write_html_report, write_site_index
+from .html import (
+    render_html,
+    write_html_report,
+    write_reports_index,
+    write_site_assets,
+    write_site_index,
+)
 from .llm import LLMClient, MockLLMClient
 from .orchestrator import DailyInsightOrchestrator
 from .render import render_markdown, write_report
@@ -34,15 +40,26 @@ def main(argv: list[str] | None = None) -> int:
     markdown = render_markdown(insight, agent_outputs)
     markdown_target = write_report(args.output, insight, markdown)
 
+    write_site_assets(args.public_dir)
     html = render_html(insight, agent_outputs)
     html_target = write_html_report(os.path.join(args.public_dir, "reports"), insight, html)
 
     html_files = sorted(glob.glob(os.path.join(args.public_dir, "reports", "*.html")))
-    report_links = [
-        (os.path.basename(path).replace(".html", ""), f"reports/{os.path.basename(path)}")
-        for path in html_files
-    ]
+    report_links = []
+    for path in html_files:
+        label = os.path.basename(path).replace(".html", "")
+        report_links.append(
+            {
+                "label": label,
+                "link": f"/stock/reports/{os.path.basename(path)}",
+                "title": insight.title if label == f"{insight.date}_daily_master_report" else label,
+                "ticker": insight.selected_asset.get("ticker", "") if label == f"{insight.date}_daily_master_report" else "",
+                "theme": insight.selected_asset.get("theme", "") if label == f"{insight.date}_daily_master_report" else "",
+                "summary": insight.subtitle if label == f"{insight.date}_daily_master_report" else "",
+            }
+        )
     index_target = write_site_index(args.public_dir, report_links)
+    write_reports_index(args.public_dir, report_links)
 
     print(markdown_target)
     print(html_target)

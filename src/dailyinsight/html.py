@@ -1,14 +1,411 @@
 from __future__ import annotations
 
+import json
 from html import escape
 from pathlib import Path
 
 from .models import AgentOutput, DailyInsight
 
 
+SITE_CSS = """
+:root {
+  --color-brand: 210 90% 56%;
+  --color-brand-light: 210 95% 90%;
+  --color-brand-dark: 210 85% 22%;
+  --color-surface: 0 0% 100%;
+  --color-surface-muted: 220 18% 95%;
+  --color-text: 220 28% 12%;
+  --color-text-secondary: 220 12% 42%;
+  --color-border: 220 18% 88%;
+
+  --bg-base: #eef4fb;
+  --bg-elevated: #f7fbff;
+  --bg-header: rgba(245, 250, 255, 0.88);
+  --bg-card: hsl(var(--color-surface));
+  --bg-muted: hsl(var(--color-surface-muted));
+  --text-primary: hsl(var(--color-text));
+  --text-secondary: hsl(var(--color-text-secondary));
+  --text-accent: hsl(var(--color-brand));
+  --border-default: hsl(var(--color-border));
+  --border-accent: hsl(var(--color-brand) / 0.3);
+  --highlight-bg: hsl(var(--color-brand-light));
+  --highlight-text: hsl(var(--color-brand-dark));
+  --shadow-sm: 0 1px 2px rgba(21, 57, 94, 0.05);
+  --shadow-md: 0 8px 20px rgba(21, 57, 94, 0.08);
+  --shadow-lg: 0 20px 40px rgba(21, 57, 94, 0.12);
+  --radius: 18px;
+  --max-width: 980px;
+}
+
+[data-theme="dark"] {
+  --bg-base: #08101b;
+  --bg-elevated: #0c1522;
+  --bg-header: rgba(8, 16, 27, 0.88);
+  --bg-card: #0f1b2b;
+  --bg-muted: #132235;
+  --text-primary: #f3f7fc;
+  --text-secondary: #9db0c6;
+  --text-accent: #6fb8ff;
+  --border-default: #1e3047;
+  --border-accent: rgba(111, 184, 255, 0.35);
+  --highlight-bg: rgba(65, 132, 255, 0.18);
+  --highlight-text: #9dcaff;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top left, rgba(118, 180, 255, 0.18), transparent 30%), var(--bg-base);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.site-header {
+  padding: 56px 0 28px;
+}
+
+.header-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: center;
+}
+
+.site-logo {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.site-logo span {
+  color: var(--text-accent);
+}
+
+.header-search {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+}
+
+.header-search input {
+  width: 100%;
+  height: 48px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: var(--bg-muted);
+  color: var(--text-primary);
+  padding: 0 16px 0 46px;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.header-search input:focus {
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 4px rgba(76, 148, 255, 0.13);
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+}
+
+.hero {
+  padding: 18px 0 8px;
+}
+
+.hero-card,
+.section-card,
+.report-shell {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: 24px;
+  box-shadow: var(--shadow-md);
+}
+
+.hero-card {
+  padding: 28px;
+}
+
+.hero-title {
+  font-size: 2.2rem;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  margin: 0 0 10px;
+}
+
+.hero-copy {
+  color: var(--text-secondary);
+  max-width: 70ch;
+  margin: 0;
+}
+
+.hero-pills,
+.report-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.pill {
+  border-radius: 999px;
+  background: var(--highlight-bg);
+  color: var(--highlight-text);
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.section-card {
+  margin-top: 20px;
+  padding: 24px;
+}
+
+.section-title {
+  margin: 0 0 14px;
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+}
+
+.muted {
+  color: var(--text-secondary);
+}
+
+.product-grid,
+.report-grid,
+.agent-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.product-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.report-grid {
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+}
+
+.agent-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.product-card,
+.report-card,
+.agent-card {
+  border: 1px solid var(--border-default);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.7), transparent), var(--bg-card);
+  padding: 18px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.product-card:hover,
+.report-card:hover,
+.agent-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-accent);
+}
+
+.product-title,
+.report-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 10px 0 6px;
+  letter-spacing: -0.02em;
+}
+
+.product-desc,
+.report-desc,
+.agent-card p {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.report-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.report-shell {
+  padding: 28px;
+  margin-top: 16px;
+}
+
+.report-title-main {
+  font-size: 2.35rem;
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+  margin: 12px 0;
+}
+
+.report-subtitle {
+  color: var(--text-secondary);
+  margin: 0 0 16px;
+  max-width: 72ch;
+}
+
+.report-section {
+  margin-top: 24px;
+}
+
+.report-section h2 {
+  margin: 0 0 12px;
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+
+.report-section h3 {
+  margin: 16px 0 10px;
+  font-size: 1rem;
+  color: var(--text-accent);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border-radius: 14px;
+  font-size: 0.94rem;
+}
+
+th,
+td {
+  text-align: left;
+  vertical-align: top;
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+th {
+  background: var(--bg-muted);
+  color: var(--text-accent);
+}
+
+pre {
+  background: #0f1724;
+  color: #eef5ff;
+  border-radius: 16px;
+  padding: 16px;
+  overflow-x: auto;
+  box-shadow: var(--shadow-sm);
+}
+
+mark {
+  background: var(--highlight-bg);
+  color: var(--highlight-text);
+  border-radius: 4px;
+  padding: 0 2px;
+}
+
+.empty {
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 14px 0 2px;
+}
+
+@media (max-width: 720px) {
+  .hero-title,
+  .report-title-main {
+    font-size: 1.7rem;
+  }
+  .container {
+    padding: 0 16px;
+  }
+  .hero-card,
+  .section-card,
+  .report-shell {
+    padding: 18px;
+    border-radius: 18px;
+  }
+}
+"""
+
+
+SITE_JS = """
+(function () {
+  var themeKey = 'stock-theme';
+  var root = document.documentElement;
+  var current = localStorage.getItem(themeKey) || 'light';
+  root.setAttribute('data-theme', current);
+
+  var themeBtn = document.getElementById('theme-btn');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      localStorage.setItem(themeKey, next);
+    });
+  }
+
+  var dataEl = document.getElementById('report-data');
+  var input = document.getElementById('site-search');
+  var cards = Array.prototype.slice.call(document.querySelectorAll('[data-report-card]'));
+  if (!input || !dataEl || cards.length === 0) return;
+
+  var reports = [];
+  try {
+    reports = JSON.parse(dataEl.textContent || '[]');
+  } catch (err) {
+    reports = [];
+  }
+
+  function applyFilter(query) {
+    var q = query.trim().toLowerCase();
+    cards.forEach(function (card) {
+      var hay = (card.getAttribute('data-search') || '').toLowerCase();
+      card.style.display = !q || hay.indexOf(q) !== -1 ? '' : 'none';
+    });
+  }
+
+  input.addEventListener('input', function () {
+    applyFilter(input.value);
+  });
+
+  window.addEventListener('keydown', function (e) {
+    if (e.key === '/' && document.activeElement !== input) {
+      e.preventDefault();
+      input.focus();
+    }
+  });
+})();
+"""
+
+
 def _table(rows: list[dict[str, str]], columns: list[str]) -> str:
     if not rows:
-        return "<p>No data.</p>"
+        return "<p class='empty'>No data.</p>"
     head = "".join(f"<th>{escape(col)}</th>" for col in columns)
     body_rows = []
     for row in rows:
@@ -18,7 +415,45 @@ def _table(rows: list[dict[str, str]], columns: list[str]) -> str:
 
 
 def _list(items: list[str]) -> str:
+    if not items:
+        return "<p class='empty'>No items.</p>"
     return "<ul>" + "".join(f"<li>{escape(item)}</li>" for item in items) + "</ul>"
+
+
+def _layout(title: str, body: str) -> str:
+    return f"""<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{escape(title)}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/stock/assets/css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="/stock/" class="site-logo">Stock<span>Lab</span></a>
+        <div class="header-search">
+          <span class="search-icon">⌕</span>
+          <input id="site-search" type="text" placeholder="Search reports, themes, tickers..." autocomplete="off" />
+        </div>
+        <button id="theme-btn" class="pill" type="button">Toggle theme</button>
+      </div>
+    </div>
+  </header>
+  <main>
+    <div class="container">
+      {body}
+    </div>
+  </main>
+  <script src="/stock/assets/js/site.js"></script>
+</body>
+</html>
+"""
 
 
 def _agent_cards(agent_outputs: dict[str, AgentOutput]) -> str:
@@ -39,210 +474,112 @@ def _agent_cards(agent_outputs: dict[str, AgentOutput]) -> str:
         if key not in agent_outputs:
             continue
         cards.append(
-            f"<div class='card'><h3>{escape(key)}</h3><p>{escape(agent_outputs[key].summary)}</p></div>"
+            f"<div class='agent-card'><h3>{escape(key)}</h3><p>{escape(agent_outputs[key].summary)}</p></div>"
         )
-    return "<div class='grid'>" + "".join(cards) + "</div>"
+    return "<div class='agent-grid'>" + "".join(cards) + "</div>"
 
 
 def render_html(insight: DailyInsight, agent_outputs: dict[str, AgentOutput]) -> str:
-    return f"""<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{escape(insight.title)}</title>
-  <style>
-    :root {{
-      --bg: #f5f1e8;
-      --paper: #fffdf8;
-      --ink: #10212b;
-      --muted: #52606b;
-      --line: #d8d0c0;
-      --accent: #b44f25;
-      --accent-soft: #f1dfd4;
-      --ok: #215732;
-      --warn: #8b5a00;
-    }}
-    * {{ box-sizing: border-box; }}
-    body {{
-      margin: 0;
-      font-family: Georgia, "Iowan Old Style", serif;
-      color: var(--ink);
-      background:
-        radial-gradient(circle at top left, #f3e7cf 0, transparent 30%),
-        linear-gradient(180deg, #f7f3eb 0%, #efe7da 100%);
-    }}
-    .page {{
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 48px 24px 96px;
-    }}
-    header {{
-      background: var(--paper);
-      border: 1px solid var(--line);
-      padding: 28px;
-      border-radius: 24px;
-      box-shadow: 0 12px 30px rgba(16, 33, 43, 0.08);
-    }}
-    h1, h2, h3 {{ margin: 0 0 12px; line-height: 1.15; }}
-    h1 {{ font-size: 2.3rem; max-width: 14ch; }}
-    h2 {{ font-size: 1.35rem; margin-top: 36px; }}
-    h3 {{ font-size: 1rem; color: var(--accent); }}
-    p, li {{ line-height: 1.6; }}
-    .lede {{ color: var(--muted); max-width: 70ch; }}
-    .pill {{
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: var(--accent-soft);
-      color: var(--accent);
-      font-size: 0.82rem;
-      margin-right: 8px;
-    }}
-    .grid {{
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-    }}
-    .card {{
-      background: var(--paper);
-      border: 1px solid var(--line);
-      padding: 18px;
-      border-radius: 18px;
-    }}
-    .section {{
-      margin-top: 24px;
-      background: var(--paper);
-      border: 1px solid var(--line);
-      padding: 24px;
-      border-radius: 24px;
-      box-shadow: 0 8px 24px rgba(16, 33, 43, 0.05);
-    }}
-    table {{
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.95rem;
-      overflow: hidden;
-    }}
-    th, td {{
-      text-align: left;
-      vertical-align: top;
-      border-bottom: 1px solid var(--line);
-      padding: 10px 12px;
-    }}
-    th {{
-      color: var(--accent);
-      background: #fbf5ec;
-    }}
-    pre {{
-      background: #181c20;
-      color: #f8f7f4;
-      padding: 16px;
-      border-radius: 16px;
-      overflow-x: auto;
-      font-size: 0.9rem;
-    }}
-    a {{ color: var(--accent); }}
-  </style>
-</head>
-<body>
-  <main class="page">
-    <header>
-      <div>
-        <span class="pill">{escape(insight.date)}</span>
-        <span class="pill">{escape(insight.selected_asset.get("ticker", ""))}</span>
-        <span class="pill">Confidence {escape(str(insight.confidence))}</span>
-        <span class="pill">Risk {escape(str(insight.risk_level))}</span>
+    body = f"""
+    <section class="hero">
+      <div class="hero-card">
+        <div class="report-pills">
+          <span class="pill">{escape(insight.date)}</span>
+          <span class="pill">{escape(insight.selected_asset.get("ticker", ""))}</span>
+          <span class="pill">Confidence {escape(str(insight.confidence))}</span>
+          <span class="pill">Risk {escape(str(insight.risk_level))}</span>
+        </div>
+        <h1 class="report-title-main">{escape(insight.title)}</h1>
+        <p class="report-subtitle">{escape(insight.subtitle)}</p>
+        {_list(insight.executive_summary)}
       </div>
-      <h1>{escape(insight.title)}</h1>
-      <p class="lede">{escape(insight.subtitle)}</p>
-      {_list(insight.executive_summary)}
-    </header>
-
-    <section class="section">
-      <h2>Decision Dashboard</h2>
-      {_table(insight.dashboard, ["item", "conclusion", "reason"])}
     </section>
 
-    <section class="section">
-      <h2>Source Validation</h2>
-      {_table(insight.source_table, ["source", "grade", "status", "reason", "url"])}
-    </section>
+    <article class="report-shell">
+      <section class="report-section">
+        <h2>Decision Dashboard</h2>
+        {_table(insight.dashboard, ["item", "conclusion", "reason"])}
+      </section>
 
-    <section class="section">
-      <h2>World Market and Scouting</h2>
-      {_table(insight.macro_table, ["axis", "view", "impact"])}
-      <br />
-      {_table(insight.scouting_table, ["candidate", "ticker", "theme", "why_now", "status"])}
-      <br />
-      {_table(insight.emerging_table, ["candidate", "stage", "quality_view", "value_view", "reason"])}
-    </section>
+      <section class="report-section">
+        <h2>Source Validation</h2>
+        {_table(insight.source_table, ["source", "grade", "status", "reason", "url"])}
+      </section>
 
-    <section class="section">
-      <h2>Price and Scenario</h2>
-      {_table(insight.price_table, ["type", "price", "date", "vs_current", "comment"])}
-      <br />
-      {_table(insight.range_table, ["period", "low", "high", "position", "comment"])}
-      <br />
-      {_table(insight.scenario_table, ["scenario", "target", "upside", "probability", "trigger"])}
-    </section>
+      <section class="report-section">
+        <h2>World Market and Scouting</h2>
+        {_table(insight.macro_table, ["axis", "view", "impact"])}
+        <h3>Primary Candidates</h3>
+        {_table(insight.scouting_table, ["candidate", "ticker", "theme", "why_now", "status"])}
+        <h3>Emerging and Less-Obvious Candidates</h3>
+        {_table(insight.emerging_table, ["candidate", "stage", "quality_view", "value_view", "reason"])}
+      </section>
 
-    <section class="section">
-      <h2>Domain, Competition, and Risks</h2>
-      {_table(insight.domain_table, ["item", "conclusion", "reason"])}
-      <br />
-      {_table(insight.competition_table, ["company", "strength", "weakness", "view"])}
-      <br />
-      {_table(insight.fraud_table, ["check", "status", "reason"])}
-      <br />
-      {_table(insight.risk_table, ["risk", "level", "reason", "response"])}
-    </section>
+      <section class="report-section">
+        <h2>Price and Scenario</h2>
+        {_table(insight.price_table, ["type", "price", "date", "vs_current", "comment"])}
+        <h3>Range</h3>
+        {_table(insight.range_table, ["period", "low", "high", "position", "comment"])}
+        <h3>Scenario Targets</h3>
+        {_table(insight.scenario_table, ["scenario", "target", "upside", "probability", "trigger"])}
+      </section>
 
-    <section class="section">
-      <h2>Debate and Verification</h2>
-      {_table(insight.debate_table, ["point", "bull", "bear", "decision"])}
-      <br />
-      {_table(insight.verification_table, ["check", "status", "note"])}
-      <br />
-      {_table(insight.final_review_table, ["check", "status", "note"])}
-    </section>
+      <section class="report-section">
+        <h2>Domain, Competition, and Risks</h2>
+        {_table(insight.domain_table, ["item", "conclusion", "reason"])}
+        <h3>Competition</h3>
+        {_table(insight.competition_table, ["company", "strength", "weakness", "view"])}
+        <h3>Fraud Guard</h3>
+        {_table(insight.fraud_table, ["check", "status", "reason"])}
+        <h3>Risk Map</h3>
+        {_table(insight.risk_table, ["risk", "level", "reason", "response"])}
+      </section>
 
-    <section class="section">
-      <h2>Probabilities and Future View</h2>
-      {_table(insight.probability_table, ["outcome", "probability", "reason"])}
-      <br />
-      {_table(insight.future_view_table, ["horizon", "view", "reason"])}
-    </section>
+      <section class="report-section">
+        <h2>Debate and Verification</h2>
+        {_table(insight.debate_table, ["point", "bull", "bear", "decision"])}
+        <h3>Verification on Verification</h3>
+        {_table(insight.verification_table, ["check", "status", "note"])}
+        <h3>Final Review</h3>
+        {_table(insight.final_review_table, ["check", "status", "note"])}
+      </section>
 
-    <section class="section">
-      <h2>Execution</h2>
-      {_table(insight.buy_plan, ["step", "condition", "size", "reason"])}
-      <br />
-      {_table(insight.sell_plan, ["step", "condition", "size", "reason"])}
-      <p><strong>Final action:</strong> {escape(insight.action)}</p>
-      <h3>Catalysts</h3>
-      {_list(insight.catalysts)}
-      <h3>Watch Items</h3>
-      {_list(insight.watch_items)}
-    </section>
+      <section class="report-section">
+        <h2>Probabilities and Future View</h2>
+        {_table(insight.probability_table, ["outcome", "probability", "reason"])}
+        <h3>Future View</h3>
+        {_table(insight.future_view_table, ["horizon", "view", "reason"])}
+      </section>
 
-    <section class="section">
-      <h2>Evidence and News</h2>
-      {_table(insight.evidence_table, ["claim", "evidence"])}
-      <br />
-      {_table(insight.news_table, ["headline", "source", "quality", "impact", "judgment", "url"])}
-      <h3>Rejected Alternatives</h3>
-      {_list(insight.rejected_alternatives)}
-    </section>
+      <section class="report-section">
+        <h2>Execution</h2>
+        {_table(insight.buy_plan, ["step", "condition", "size", "reason"])}
+        <h3>Sell Plan</h3>
+        {_table(insight.sell_plan, ["step", "condition", "size", "reason"])}
+        <h3>Final Action</h3>
+        <p>{escape(insight.action)}</p>
+        <h3>Catalysts</h3>
+        {_list(insight.catalysts)}
+        <h3>Watch Items</h3>
+        {_list(insight.watch_items)}
+      </section>
 
-    <section class="section">
-      <h2>Agent Trace</h2>
-      {_agent_cards(agent_outputs)}
-    </section>
-  </main>
-</body>
-</html>
-"""
+      <section class="report-section">
+        <h2>Evidence and News</h2>
+        {_table(insight.evidence_table, ["claim", "evidence"])}
+        <h3>News Table</h3>
+        {_table(insight.news_table, ["headline", "source", "quality", "impact", "judgment", "url"])}
+        <h3>Rejected Alternatives</h3>
+        {_list(insight.rejected_alternatives)}
+      </section>
+
+      <section class="report-section">
+        <h2>Agent Trace</h2>
+        {_agent_cards(agent_outputs)}
+      </section>
+    </article>
+    """
+    return _layout(insight.title, body)
 
 
 def write_html_report(output_dir: str, insight: DailyInsight, content: str) -> str:
@@ -253,37 +590,124 @@ def write_html_report(output_dir: str, insight: DailyInsight, content: str) -> s
     return str(target)
 
 
-def write_site_index(output_dir: str, reports: list[tuple[str, str]]) -> str:
-    path = Path(output_dir)
-    path.mkdir(parents=True, exist_ok=True)
-    items = "".join(
-        f"<li><a href='{escape(link)}'>{escape(label)}</a></li>"
-        for label, link in sorted(reports, reverse=True)
-    )
-    content = f"""<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>stock daily reports</title>
-  <style>
-    body {{ font-family: Georgia, serif; margin: 0; background: #f5f1e8; color: #10212b; }}
-    main {{ max-width: 900px; margin: 0 auto; padding: 48px 24px; }}
-    .wrap {{ background: #fffdf8; border: 1px solid #d8d0c0; border-radius: 24px; padding: 28px; }}
-    a {{ color: #b44f25; }}
-  </style>
-</head>
-<body>
-  <main>
-    <div class="wrap">
-      <h1>stock daily reports</h1>
-      <p>Static HTML output for GitHub Pages.</p>
-      <ul>{items}</ul>
-    </div>
-  </main>
-</body>
-</html>
-"""
-    target = path / "index.html"
-    target.write_text(content, encoding="utf-8")
+def write_site_assets(output_dir: str) -> None:
+    css_path = Path(output_dir) / "assets" / "css"
+    js_path = Path(output_dir) / "assets" / "js"
+    css_path.mkdir(parents=True, exist_ok=True)
+    js_path.mkdir(parents=True, exist_ok=True)
+    (css_path / "style.css").write_text(SITE_CSS, encoding="utf-8")
+    (js_path / "site.js").write_text(SITE_JS, encoding="utf-8")
+
+
+def write_site_index(output_dir: str, reports: list[dict[str, str]]) -> str:
+    cards = []
+    for report in sorted(reports, key=lambda item: item["label"], reverse=True):
+        search_blob = " ".join(
+            [
+                report.get("label", ""),
+                report.get("title", ""),
+                report.get("ticker", ""),
+                report.get("theme", ""),
+                report.get("summary", ""),
+            ]
+        )
+        cards.append(
+            f"""
+            <a class="report-card" data-report-card data-search="{escape(search_blob)}" href="{escape(report['link'])}">
+              <div class="report-meta">
+                <span>{escape(report.get("label", ""))}</span>
+                <span>{escape(report.get("ticker", ""))}</span>
+              </div>
+              <div class="report-title">{escape(report.get("title", report.get("label", "")))}</div>
+              <p class="report-desc">{escape(report.get("summary", ""))}</p>
+            </a>
+            """
+        )
+    cards_html = "".join(cards) if cards else "<p class='empty'>No reports yet.</p>"
+    reports_json = json.dumps(reports, ensure_ascii=False)
+
+    body = f"""
+    <section class="hero">
+      <div class="hero-card">
+        <h1 class="hero-title">Stock research reports with brainscience-style navigation</h1>
+        <p class="hero-copy">A blue-toned static research hub for daily master reports, source-validated ideas, and searchable market insight archives.</p>
+        <div class="hero-pills">
+          <span class="pill">Static hosting</span>
+          <span class="pill">Searchable</span>
+          <span class="pill">Daily reports</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <h2 class="section-title">Products</h2>
+      <div class="product-grid">
+        <a href="/stock/" class="product-card">
+          <div class="product-title">stock</div>
+          <p class="product-desc">Daily master-report orchestration for investing research</p>
+        </a>
+        <a href="/stock/reports/" class="product-card">
+          <div class="product-title">reports</div>
+          <p class="product-desc">Detailed daily market reports with sources, risks, and action plans</p>
+        </a>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <h2 class="section-title">Recent Reports</h2>
+      <p class="muted">Press <code>/</code> to focus search. Results filter instantly on the page.</p>
+      <div class="report-grid">
+        {cards_html}
+      </div>
+    </section>
+
+    <script id="report-data" type="application/json">{escape(reports_json)}</script>
+    """
+    target = Path(output_dir) / "index.html"
+    target.write_text(_layout("stock daily reports", body), encoding="utf-8")
+    return str(target)
+
+
+def write_reports_index(output_dir: str, reports: list[dict[str, str]]) -> str:
+    cards = []
+    for report in sorted(reports, key=lambda item: item["label"], reverse=True):
+        search_blob = " ".join(
+            [
+                report.get("label", ""),
+                report.get("title", ""),
+                report.get("ticker", ""),
+                report.get("theme", ""),
+                report.get("summary", ""),
+            ]
+        )
+        cards.append(
+            f"""
+            <a class="report-card" data-report-card data-search="{escape(search_blob)}" href="{escape(report['link'])}">
+              <div class="report-meta">
+                <span>{escape(report.get("label", ""))}</span>
+                <span>{escape(report.get("ticker", ""))}</span>
+              </div>
+              <div class="report-title">{escape(report.get("title", report.get("label", "")))}</div>
+              <p class="report-desc">{escape(report.get("summary", ""))}</p>
+            </a>
+            """
+        )
+    cards_html = "".join(cards) if cards else "<p class='empty'>No reports yet.</p>"
+    reports_json = json.dumps(reports, ensure_ascii=False)
+    body = f"""
+    <section class="hero">
+      <div class="hero-card">
+        <h1 class="hero-title">Reports archive</h1>
+        <p class="hero-copy">Searchable archive of daily stock master reports.</p>
+      </div>
+    </section>
+    <section class="section-card">
+      <h2 class="section-title">All Reports</h2>
+      <div class="report-grid">{cards_html}</div>
+    </section>
+    <script id="report-data" type="application/json">{escape(reports_json)}</script>
+    """
+    target = Path(output_dir) / "reports" / "index.html"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(_layout("stock reports", body), encoding="utf-8")
     return str(target)
