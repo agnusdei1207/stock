@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>stock daily reports</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/stock/assets/css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="/stock/" class="site-logo">Stock<span>Lab</span></a>
+        <div class="header-search">
+          <span class="search-icon">⌕</span>
+          <input id="site-search" type="text" placeholder="Search reports, themes, tickers..." autocomplete="off" />
+        </div>
+        <button id="theme-btn" class="pill" type="button">Toggle theme</button>
+      </div>
+    </div>
+  </header>
+  <main>
+    <div class="container">
+      
+    <section class="hero">
+      <div class="hero-card">
+        <h1 class="hero-title">Stock research reports with brainscience-style navigation</h1>
+        <p class="hero-copy">A blue-toned static research hub for daily master reports, source-validated ideas, and searchable market insight archives.</p>
+        <div class="hero-pills">
+          <span class="pill">Static hosting</span>
+          <span class="pill">Searchable</span>
+          <span class="pill">Daily reports</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <h2 class="section-title">Products</h2>
+      <div class="product-grid">
+        <a href="/stock/" class="product-card">
+          <div class="product-title">stock</div>
+          <p class="product-desc">Daily master-report orchestration for investing research</p>
+        </a>
+        <a href="/stock/reports/" class="product-card">
+          <div class="product-title">reports</div>
+          <p class="product-desc">Detailed daily market reports with sources, risks, and action plans</p>
+        </a>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <h2 class="section-title">Recent Reports</h2>
+      <p class="muted">Press <code>/</code> to focus search. Results filter instantly on the page.</p>
+      <div class="report-grid">
+        
+            <a class="report-card" data-report-card data-search="2026-03-19_daily_master_report Daily Master Report: AI deployment bottlenecks still offer a better edge than the loudest AI narrative VRT AI power and cooling bottleneck Focus on power and cooling infrastructure where AI demand turns into real revenue earlier and more visibly." href="/stock/reports/2026-03-19_daily_master_report.html">
+              <div class="report-meta">
+                <span>2026-03-19_daily_master_report</span>
+                <span>VRT</span>
+              </div>
+              <div class="report-title">Daily Master Report: AI deployment bottlenecks still offer a better edge than the loudest AI narrative</div>
+              <p class="report-desc">Focus on power and cooling infrastructure where AI demand turns into real revenue earlier and more visibly.</p>
+            </a>
+            
+      </div>
+    </section>
+
+    <script id="report-data" type="application/json">[{&quot;label&quot;: &quot;2026-03-19_daily_master_report&quot;, &quot;link&quot;: &quot;/stock/reports/2026-03-19_daily_master_report.html&quot;, &quot;title&quot;: &quot;Daily Master Report: AI deployment bottlenecks still offer a better edge than the loudest AI narrative&quot;, &quot;ticker&quot;: &quot;VRT&quot;, &quot;theme&quot;: &quot;AI power and cooling bottleneck&quot;, &quot;summary&quot;: &quot;Focus on power and cooling infrastructure where AI demand turns into real revenue earlier and more visibly.&quot;}]</script>
+    
+    </div>
+  </main>
+  <script src="/stock/assets/js/site.js"></script>
+</body>
+</html>
